@@ -13,7 +13,7 @@ const password = btoa(
 );
 
 export const Payment_Route = Router();
-let tpks;
+let checkoutId,tokenId;
 Payment_Route.post(
   "/api/messpayment/mpesa",
   Token_Gnerator,
@@ -21,6 +21,7 @@ Payment_Route.post(
     // !user information
     const { phone, amount } = req.body;
     const token = res.Authorization.access_token;
+    tokenId=token
     console.log(token);
     await axios
       .post(
@@ -37,8 +38,7 @@ Payment_Route.post(
           PartyB: process.env.SHORT_CODE,
           // PhoneNumber: 254790504636,
           PhoneNumber: 254792626899,
-          CallBackURL:
-            "https://65d1-41-89-227-171.ngrok-free.app/callback/result",
+          CallBackURL:process.env.CALL_BACK_URL,
           AccountReference: "Test",
           TransactionDesc: "Test",
         },
@@ -51,32 +51,49 @@ Payment_Route.post(
       )
       .then((results) => {
         console.log(results.data);
-        tpks = token;
+        
         res.json(results.data);
-        const checkoutId = results.data.CheckoutRequestID;
+         checkoutId = results.data.CheckoutRequestID;
 
+        
         // ! transaction status
-        axios
-          .post(
-            "https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query",
-            {
-              BusinessShortCode: 174379,
-              Password: password,
-              Timestamp: Timestamp,
-              CheckoutRequestID: checkoutId,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          )
-          .then((data) => {
-            console.log(data);
-          });
+    
+            setTimeout(fetchPaymentStatus ,5000)
+       
+
+       
       })
       .catch((err) => {
-        console.log(err.data);
+        console.log(err);
       });
   }
 );
+
+function fetchPaymentStatus(){
+
+    axios
+                .post(
+                  "https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query",
+                  {
+                    BusinessShortCode: 174379,
+                    Password: password,
+                    Timestamp: Timestamp,
+                    CheckoutRequestID: checkoutId,
+                  },
+                  {
+                    headers: {
+                      Authorization: `Bearer ${tokenId}`,
+                    },
+                  }
+                )
+                .then((data) => {
+                  console.log(data);
+                }).catch(error=>{
+                    console.log(error)
+                    if(error.data.errorCode=='500.001.1001'){
+                        fetchPaymentStatus()
+
+
+                    }
+                })
+}
