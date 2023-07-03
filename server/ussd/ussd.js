@@ -1,11 +1,9 @@
-const express = require('express');
-const bodyParser = require('body-parser');
+import {Router} from 'express'
+export const  Ussd_Route=Router()
 
-const app = express();
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
 
-app.post('/api/ussd/payment', (req, res) => {
+
+Ussd_Route.post('/api/ussd/payment',async (req, res) => {
     // Read the variables sent via POST from our API
     const {
         sessionId,
